@@ -11,9 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
 
 // Liste notifications
 $notifications = $db->query("
-    SELECT id, title, message, type, read_at, created_at
+    SELECT id, title, message, type, read_at, COALESCE(created_at, trigger_at, NOW()) AS created_at
     FROM notifications
-    ORDER BY created_at DESC
+    ORDER BY COALESCE(created_at, trigger_at, NOW()) DESC
     LIMIT 50
 ")->fetchAll(PDO::FETCH_ASSOC);
 

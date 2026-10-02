@@ -13,19 +13,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['department_name'] ?? '');
         $desc = trim($_POST['department_desc'] ?? '');
         if ($name !== '') {
-            $db->prepare("INSERT INTO departments (name, description) VALUES (?, ?)")
-               ->execute([$name, $desc]);
-            $flash = "success|Le departement « {$name} » a ete cree.";
+            try {
+                $db->prepare("INSERT INTO departments (name, description) VALUES (?, ?)")
+                   ->execute([$name, $desc]);
+                $flash = "success|Le departement « {$name} » a ete cree avec succes.";
+            } catch (PDOException $e) {
+                if (str_contains($e->getMessage(), 'Duplicate entry') || $e->getCode() == 23000) {
+                    $flash = "danger|Un departement portant le nom « {$name} » existe deja.";
+                } else {
+                    $flash = "danger|Erreur lors de la creation : " . htmlspecialchars($e->getMessage());
+                }
+            }
         }
     }
 
     if ($action === 'delete_department') {
         $id = (int)($_POST['dept_id'] ?? 0);
         if ($id > 0) {
-            // Desaffecter les equipements
+            // Desaffecter les equipements lies
             $db->prepare("UPDATE equipment SET department_id = NULL WHERE department_id = ?")->execute([$id]);
             $db->prepare("DELETE FROM departments WHERE id = ?")->execute([$id]);
-            $flash = "success|Departement supprime. Les equipements ont ete desaffectes.";
+            $flash = "success|Departement supprime. Les equipements associes ont ete desaffectes.";
         }
     }
 }
@@ -51,7 +59,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="card-header" style="margin-bottom:20px">
   <div>
     <h2 style="font-size:17px;font-weight:700;color:var(--text-primary)">Gestion des Departements</h2>
-    <p style="font-size:13px;color:var(--text-muted);margin-top:2px">Organisez vos equipements par zones ou unites operationnelles</p>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:2px">Organisez vos equipements par unites operationnelles</p>
   </div>
   <button class="btn btn-primary" onclick="openDeptModal()">Nouveau departement</button>
 </div>
@@ -60,30 +68,32 @@ require_once __DIR__ . '/../includes/header.php';
 <?php if (!empty($departments)): ?>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px">
   <?php foreach ($departments as $d): ?>
-  <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+  <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px;position:relative">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:var(--text-primary)"><?= htmlspecialchars($d['name']) ?></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:700;color:var(--text-primary);word-break:break-word"><?= htmlspecialchars($d['name']) ?></div>
         <?php if ($d['description']): ?>
         <div style="font-size:12.5px;color:var(--text-muted);margin-top:3px"><?= htmlspecialchars($d['description']) ?></div>
         <?php endif; ?>
       </div>
-      <span class="count-badge"><?= (int)$d['equipment_count'] ?> equip.</span>
+      <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span class="count-badge"><?= (int)$d['equipment_count'] ?> equip.</span>
+      </div>
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--border-light);padding-top:12px">
       <a href="equipements.php?dept=<?= $d['id'] ?>" class="btn btn-secondary btn-sm" style="flex:1;text-align:center">
         Voir les equipements
       </a>
-      <?php if ((int)$d['equipment_count'] === 0): ?>
-      <form method="post" onsubmit="return confirm('Supprimer ce departement ?')">
+      <form id="deleteDeptForm_<?= $d['id'] ?>" method="post" style="display:inline">
         <input type="hidden" name="action" value="delete_department">
         <input type="hidden" name="dept_id" value="<?= $d['id'] ?>">
-        <button type="submit" class="btn-delete-row">Supprimer</button>
+        <button type="button"
+                class="btn-delete-row"
+                onclick="confirmDeleteDept(<?= $d['id'] ?>, '<?= addslashes($d['name']) ?>', <?= (int)$d['equipment_count'] ?>)">
+          Supprimer
+        </button>
       </form>
-      <?php else: ?>
-      <span style="font-size:12px;color:var(--text-muted);font-style:italic">Non supprimable</span>
-      <?php endif; ?>
     </div>
   </div>
   <?php endforeach; ?>
@@ -120,6 +130,19 @@ require_once __DIR__ . '/../includes/header.php';
 <script>
   function openDeptModal()  { document.getElementById('deptModal').classList.remove('hidden'); }
   function closeDeptModal() { document.getElementById('deptModal').classList.add('hidden'); }
+
+  function confirmDeleteDept(id, name, count) {
+    let msg = `Voulez-vous vraiment supprimer le departement « ${name} » ?`;
+    if (count > 0) {
+      msg += ` Les ${count} equipement(s) associe(s) seront desaffectes.`;
+    }
+    showDeleteModal({
+      title: 'Supprimer le departement',
+      message: msg,
+      form: document.getElementById('deleteDeptForm_' + id)
+    });
+  }
+
   window.addEventListener('click', e => {
     const m = document.getElementById('deptModal');
     if (e.target === m) m.classList.add('hidden');

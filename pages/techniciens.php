@@ -107,10 +107,10 @@ require_once __DIR__ . '/../includes/header.php';
             </span>
           </td>
           <td style="text-align:right">
-            <form method="post" onsubmit="return confirm('Supprimer ce technicien ?')" style="display:inline">
+            <form id="deleteTechForm_<?= $t['id'] ?>" method="post" style="display:inline">
               <input type="hidden" name="action" value="delete_technician">
               <input type="hidden" name="tech_id" value="<?= $t['id'] ?>">
-              <button type="submit" class="btn-delete-row">Supprimer</button>
+              <button type="button" class="btn-delete-row" onclick="confirmDeleteTech(<?= $t['id'] ?>, '<?= addslashes($t['name']) ?>')">Supprimer</button>
             </form>
           </td>
         </tr>
@@ -156,6 +156,14 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
+  function confirmDeleteTech(id, name) {
+    showDeleteModal({
+      title: 'Supprimer le technicien',
+      message: Voulez-vous vraiment supprimer le technicien «  + name +  » ?,
+      form: document.getElementById('deleteTechForm_' + id)
+    });
+  }
+
   function openTechModal()  { document.getElementById('techModal').classList.remove('hidden'); }
   function closeTechModal() { document.getElementById('techModal').classList.add('hidden'); }
   window.addEventListener('click', e => {

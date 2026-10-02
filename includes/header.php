@@ -94,9 +94,9 @@ try {
     <div class="sidebar-foot">
       <div class="system-status">
         <span class="status-dot"></span>
-        <span>Systeme operationnel</span>
+        <span>INSTN - Madagascar</span>
       </div>
-      <div class="foot-version">GESTIMAINT v2.0</div>
+      <div class="foot-version">GESTIMAINT v1.0</div>
     </div>
   </aside>
 

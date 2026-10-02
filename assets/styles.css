@@ -490,9 +490,15 @@ tbody td { padding: 11px 14px; }
   color: var(--text-secondary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-full);
-  padding: 3px 10px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 68px;
+  line-height: 1.2;
 }
 
 /* ── BOUTONS — SIMPLES, SANS ICONES ─────────────────── */
@@ -945,4 +951,35 @@ tbody td { padding: 11px 14px; }
   .topbar { padding: 0 14px; }
   .toolbar { flex-direction: column; align-items: stretch; }
   .toolbar-right { justify-content: flex-end; }
+}
+/* Bouton poubelle discret au survol */
+.btn-trash-icon {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease, background 0.15s ease, color 0.15s ease;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+tr:hover .btn-trash-icon,
+.action-buttons:hover .btn-trash-icon,
+.card:hover .btn-trash-icon {
+  opacity: 0.7;
+  visibility: visible;
+}
+.btn-trash-icon:hover {
+  opacity: 1 !important;
+  background: var(--red-50);
+  color: var(--red-500);
+  border-color: var(--red-200);
 }
