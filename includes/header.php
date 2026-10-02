@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // includes/header.php — En-tete partage et barre laterale de navigation
 header('Content-Type: text/html; charset=utf-8');
 mb_internal_encoding('UTF-8');
@@ -154,4 +154,5 @@ try {
   if (menuBtn)  menuBtn.addEventListener('click', openSidebar);
   if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
   if (overlay)  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
 </script>

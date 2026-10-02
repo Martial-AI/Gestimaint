@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../includes/db.php';
 mb_internal_encoding('UTF-8');
 
@@ -8,21 +8,35 @@ $flash = '';
 // Actions POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
     if ($action === 'add_technician') {
-        $name  = trim($_POST['name'] ?? '');
-        $spec  = trim($_POST['specialite'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        if ($name) {
-            $db->prepare("INSERT INTO users (name, specialite, phone, email, role) VALUES (?,?,?,?,'technicien')")
-               ->execute([$name, $spec, $phone, $email]);
-            $flash = "success|Technicien « {$name} » ajoute.";
+        $full_name = trim($_POST['name'] ?? '');
+        $spec      = trim($_POST['specialty'] ?? '');
+        $phone     = trim($_POST['phone'] ?? '');
+        $email     = trim($_POST['email'] ?? '');
+
+        if ($full_name !== '') {
+            $parts = explode(' ', $full_name, 2);
+            $first = $parts[0];
+            $last  = $parts[1] ?? '';
+
+            // Trouver role technician
+            $role_id = (int)$db->query("SELECT id FROM roles WHERE code = 'technician' LIMIT 1")->fetchColumn() ?: 2;
+
+            $stmt = $db->prepare("
+                INSERT INTO users (role_id, first_name, last_name, specialty, phone, email, active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            ");
+            $stmt->execute([$role_id, $first, $last, $spec, $phone, $email ?: null]);
+            $flash = "success|Technicien « {$full_name} » ajoute avec succes.";
         }
     }
+
     if ($action === 'delete_technician') {
         $id = (int)($_POST['tech_id'] ?? 0);
         if ($id > 0) {
-            $db->prepare("DELETE FROM users WHERE id=? AND role='technicien'")->execute([$id]);
+            $db->prepare("DELETE FROM work_order_technicians WHERE technician_id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
             $flash = "success|Technicien supprime.";
         }
     }
@@ -30,13 +44,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Liste techniciens avec compteur OT
 $technicians = $db->query("
-    SELECT u.id, u.name, u.specialite, u.phone, u.email, u.created_at,
+    SELECT u.id,
+           TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS name,
+           u.specialty, u.phone, u.email, u.created_at,
            COUNT(wt.work_order_id) AS wo_count
     FROM users u
     LEFT JOIN work_order_technicians wt ON wt.technician_id = u.id
-    WHERE u.role = 'technicien'
+    WHERE u.role_id != 1
     GROUP BY u.id
-    ORDER BY u.name
+    ORDER BY u.first_name, u.last_name
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 require_once __DIR__ . '/../includes/header.php';
@@ -76,7 +92,7 @@ require_once __DIR__ . '/../includes/header.php';
           <td>
             <strong style="color:var(--text-primary)"><?= htmlspecialchars($t['name']) ?></strong>
           </td>
-          <td style="color:var(--text-secondary)"><?= htmlspecialchars($t['specialite'] ?? '—') ?></td>
+          <td style="color:var(--text-secondary)"><?= htmlspecialchars($t['specialty'] ?? '—') ?></td>
           <td style="color:var(--text-secondary);font-size:13px"><?= htmlspecialchars($t['phone'] ?? '—') ?></td>
           <td style="font-size:13px">
             <?php if ($t['email']): ?>
@@ -90,8 +106,8 @@ require_once __DIR__ . '/../includes/header.php';
               <?= (int)$t['wo_count'] ?>
             </span>
           </td>
-          <td>
-            <form method="post" onsubmit="return confirm('Supprimer ce technicien ?')">
+          <td style="text-align:right">
+            <form method="post" onsubmit="return confirm('Supprimer ce technicien ?')" style="display:inline">
               <input type="hidden" name="action" value="delete_technician">
               <input type="hidden" name="tech_id" value="<?= $t['id'] ?>">
               <button type="submit" class="btn-delete-row">Supprimer</button>
@@ -116,11 +132,11 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="form-grid">
       <label style="grid-column:span 2">
         Nom complet <span style="color:var(--red-500)">*</span>
-        <input name="name" placeholder="Ex: Ahmed Benali" required>
+        <input name="name" placeholder="Ex: Alexandre Bernard" required>
       </label>
       <label>
         Specialite
-        <input name="specialite" placeholder="Ex: Electricite, Mecanique...">
+        <input name="specialty" placeholder="Ex: Electricite, Mecanique...">
       </label>
       <label>
         Telephone
@@ -128,7 +144,7 @@ require_once __DIR__ . '/../includes/header.php';
       </label>
       <label style="grid-column:span 2">
         Email
-        <input name="email" type="email" placeholder="Ex: ahmed.benali@usine.dz">
+        <input name="email" type="email" placeholder="Ex: a.bernard@gestimaint.local">
       </label>
     </div>
 

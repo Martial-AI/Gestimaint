@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../includes/db.php';
 mb_internal_encoding('UTF-8');
 
@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'complete_wo') {
         $woId = (int)($_POST['work_order_id'] ?? 0);
         if ($woId > 0) {
-            $db->prepare("UPDATE work_orders SET status='terminee', closed_at=NOW() WHERE id=?")->execute([$woId]);
+            $db->prepare("UPDATE work_orders SET status='terminee', completed_at=NOW() WHERE id=?")->execute([$woId]);
             $db->prepare("UPDATE equipment SET status='en_service' WHERE id=(SELECT equipment_id FROM work_orders WHERE id=?)")->execute([$woId]);
             header('Location: maintenance.php?kind=' . urlencode($kind_filter));
             exit;
@@ -22,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Requete OT
 $sql = "
     SELECT w.id, w.reference, w.type, w.status, w.priority,
-           w.description, w.failure_reason, w.created_at, w.closed_at,
+           w.description, w.failure_reason, w.created_at, w.completed_at AS closed_at,
            e.designation, e.serial_number,
            d.name AS dept_name,
-           GROUP_CONCAT(u.name SEPARATOR ', ') AS technicians
+           GROUP_CONCAT(CONCAT(u.first_name, ' ', u.last_name) SEPARATOR ', ') AS technicians
     FROM work_orders w
     LEFT JOIN equipment e ON e.id = w.equipment_id
     LEFT JOIN departments d ON d.id = e.department_id

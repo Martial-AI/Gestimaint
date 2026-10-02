@@ -1,5 +1,5 @@
 <?php
-// includes/db.php — Connexion intelligente à MySQL / MariaDB (WAMP / Laragon / XAMPP)
+// includes/db.php - Connexion intelligente a MySQL / MariaDB (WAMP / Laragon / XAMPP)
 
 function getDB(): PDO {
     static $pdo = null;
@@ -8,10 +8,10 @@ function getDB(): PDO {
         $host    = '127.0.0.1';
         $dbname  = 'gestimaint';
         $user    = 'root';
-        $pass    = ''; // Mot de passe vide par défaut sur WAMP/Laragon
+        $pass    = ''; // Mot de passe vide par defaut sur WAMP/Laragon
         $charset = 'utf8mb4';
 
-        // Détection automatique du port : 3307 (MariaDB par défaut sur WAMP), 3306 (MySQL standard), 3308
+        // Detection automatique du port : 3307 (MariaDB par defaut sur WAMP), 3306 (MySQL standard), 3308
         $ports = [3307, 3306, 3308];
         $lastException = null;
 
@@ -23,6 +23,7 @@ function getDB(): PDO {
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                     PDO::ATTR_TIMEOUT            => 2,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
                 ];
                 $pdo = new PDO($dsn, $user, $pass, $options);
                 return $pdo;
@@ -31,7 +32,7 @@ function getDB(): PDO {
             }
         }
 
-        // Si aucun port n'a fonctionné, affichage convivial de diagnostic
+        // Si aucun port n'a fonctionne, affichage convivial de diagnostic
         http_response_code(500);
         ?>
         <!DOCTYPE html>
@@ -39,7 +40,7 @@ function getDB(): PDO {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>GESTIMAINT — Connexion base de données</title>
+          <title>GESTIMAINT - Connexion base de données</title>
           <link rel="preconnect" href="https://fonts.googleapis.com">
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -107,11 +108,11 @@ function getDB(): PDO {
         </head>
         <body>
           <div class="setup-card">
-            <div class="setup-badge">⚠ Connexion MySQL / MariaDB</div>
+            <div class="setup-badge">Connexion MySQL / MariaDB</div>
             <h1>Base de données non accessible</h1>
-            <p>Impossible de se connecter à la base <strong>gestimaint</strong> sur <code>127.0.0.1</code> (ports testés : 3307, 3306, 3308).</p>
+            <p>Impossible de se connecter a la base <strong>gestimaint</strong> sur <code>127.0.0.1</code> (ports testes : 3307, 3306, 3308).</p>
             <div class="code-box"><?= htmlspecialchars($lastException ? $lastException->getMessage() : 'Erreur inconnue') ?></div>
-            <a href="" class="btn" onclick="location.reload(); return false;">🔄 Réessayer la connexion</a>
+            <a href="" class="btn" onclick="location.reload(); return false;">Reessayer la connexion</a>
           </div>
         </body>
         </html>
