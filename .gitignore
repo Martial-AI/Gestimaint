@@ -1,0 +1,11 @@
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Anciens fichiers temporaires
+node_modules/
+npm-debug.log*
+data/
+*.log
